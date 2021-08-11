@@ -1,0 +1,25 @@
+name: tg-message-sender
+description: Send message to telegram from given template
+inputs:
+  telegram_bot_token:
+    description: Telegram api bot token
+    required: true
+  telegram_chat_id:
+    description: Telegram chat id
+    required: true
+  env_var_prefix:
+    description: Used environment variables preifx
+    default: 'TG_MSG_'
+  template_string:
+    description: String with used message template (go template)
+  template_base64_string:
+    description: String with used base64 encoded message template (go template)
+runs:
+  using: docker
+  image: docker://sputniksystemsorg/tg-message-sender:v0.0.1
+  args:
+    - --tg-bot-token=${{ inputs.telegram_bot_token }}
+    - --tg-chat-id=${{ inputs.telegram_chat_id }}
+    - --env-var-prefix=${{ inputs.env_var_prefix }}
+    - --template-string=${{ inputs.template_string }}
+    - --template-base64-string=${{ inputs.template_base64_string }}
