@@ -16,7 +16,7 @@ inputs:
     description: String with used base64 encoded message template (go template)
 runs:
   using: docker
-  image: docker://sputniksystemsorg/tg-message-sender:v0.0.1
+  image: docker://sputniksystemsorg/tg-message-sender:v0.0.2
   args:
     - --tg-bot-token=${{ inputs.telegram_bot_token }}
     - --tg-chat-id=${{ inputs.telegram_chat_id }}

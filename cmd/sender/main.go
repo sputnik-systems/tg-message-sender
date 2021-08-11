@@ -17,10 +17,6 @@ import (
 var (
 	tmplFilePath, tmplString, tmplBase64String *string
 	envVars                                    map[string]string
-
-	tmplFuncs = template.FuncMap{
-		"split": strings.Split,
-	}
 )
 
 func main() {
