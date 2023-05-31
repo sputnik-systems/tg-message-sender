@@ -1,9 +1,6 @@
-FROM golang:1.16.5-buster as build
+FROM golang:1.20 as build
 
 WORKDIR /app
-# COPY go.mod go.sum ./
-# RUN go mod download -x
-
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./sender ./cmd/sender
 

@@ -6,20 +6,23 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 	"os"
 	"strings"
 	"text/template"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
 	tmplFilePath, tmplString, tmplBase64String *string
-	envVars                                    map[string]string
 )
 
 func main() {
+	logLevel := zap.LevelFlag("log-level", zapcore.InfoLevel, "Log level")
+
 	tgBotToken := flag.String("tg-bot-token", "", "Telegram bot token value")
 	tgChatID := flag.String("tg-chat-id", "", "Telegram chat id value")
 	envVarPrefix := flag.String("env-var-prefix", "TG_MSG_", "Environment variables name prefix")
@@ -28,29 +31,41 @@ func main() {
 	tmplBase64String = flag.String("template-base64-string", "", "Go template base64 encoded string")
 	flag.Parse()
 
+	loggerCfg := zap.Config{
+		Encoding:         "console",
+		Level:            zap.NewAtomicLevelAt(*logLevel),
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+	}
+	log := zap.Must(loggerCfg.Build())
+	defer log.Sync()
+
 	if *tgBotToken == "" {
-		log.Fatalf("bot token must be given")
+		log.Fatal("bot token must be given")
 	}
 
 	if *tgChatID == "" {
-		log.Fatalf("chat id must be given")
+		log.Fatal("chat id must be given")
 	}
 
 	t, err := getTemplateValue()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 
 	evs := getEnvVars(*envVarPrefix)
+	log.Debug("environment variables", zap.Reflect("values", evs))
 
 	msg, err := getParsedMessage(t, evs)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
+	log.Debug("message body", zap.String("value", msg))
 
-	err = sendMessage(*tgBotToken, *tgChatID, msg)
+	err = sendMessage(log, *tgBotToken, *tgChatID, msg)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 }
 
@@ -63,7 +78,7 @@ func getTemplateValue() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to open template file %s: %s", *tmplFilePath, err)
 		}
-		tb, err := ioutil.ReadAll(f)
+		tb, err := io.ReadAll(f)
 		if err != nil {
 			return "", fmt.Errorf("failed to read template file %s: %s", *tmplFilePath, err)
 		}
@@ -113,7 +128,7 @@ func getParsedMessage(t string, evs map[string]string) (string, error) {
 	return b.String(), nil
 }
 
-func sendMessage(token, chat, msg string) error {
+func sendMessage(log *zap.Logger, token, chat, msg string) error {
 	c := &http.Client{}
 	uri := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
 
@@ -134,7 +149,7 @@ func sendMessage(token, chat, msg string) error {
 	}
 
 	if resp.StatusCode != 200 {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
 			return fmt.Errorf("failed to read response body: %s", err)

@@ -1,3 +1,10 @@
 module github.com/sputnik-systems/tg-message-sender
 
-go 1.16
+go 1.20
+
+require go.uber.org/zap v1.24.0
+
+require (
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+)

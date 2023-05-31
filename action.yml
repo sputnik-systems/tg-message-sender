@@ -14,12 +14,16 @@ inputs:
     description: String with used message template (go template)
   template_base64_string:
     description: String with used base64 encoded message template (go template)
+  log_level:
+    description: Action log level
+    default: 'info'
 runs:
   using: docker
-  image: docker://sputniksystemsorg/tg-message-sender:v0.0.2
+  image: docker://ghcr.io/sputnik-systems/tg-message-sender:v0.0.3
   args:
     - --tg-bot-token=${{ inputs.telegram_bot_token }}
     - --tg-chat-id=${{ inputs.telegram_chat_id }}
     - --env-var-prefix=${{ inputs.env_var_prefix }}
     - --template-string=${{ inputs.template_string }}
     - --template-base64-string=${{ inputs.template_base64_string }}
+    - --log-level=${{ inputs.log_level }}
